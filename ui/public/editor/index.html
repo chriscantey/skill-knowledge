@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Markdown Editor</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-primary: #0d1220;
+  --bg-secondary: #141c2c;
+  --bg-tertiary: #1c2638;
+  --bg-elevated: #1e293b;
+  --text-primary: #f0f2f5;
+  --text-secondary: #c0c8d4;
+  --text-muted: #8a919d;
+  --cyan: #12c2e9;
+  --purple: #c471ed;
+  --pink: #ff6b9d;
+  --magenta: #e879f9;
+  --blue: #6BB6FF;
+  --orange: #F39C12;
+  --teal: #2dd4bf;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-active: rgba(255, 255, 255, 0.16);
+  --radius: 8px;
+  --radius-sm: 4px;
+  --transition: 150ms ease;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* --- Portal Bar --- */
+.portal-bar {
+  display: flex;
+  align-items: center;
+  padding: 0.4rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.portal-home {
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: color var(--transition);
+}
+
+.portal-home:hover { color: var(--cyan); }
+
+/* --- Layout --- */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  max-height: calc(100vh - 33px);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.header-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--cyan);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.header-title svg { opacity: 0.7; }
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-left: auto;
+}
+
+/* --- Document Tabs --- */
+.doc-tabs-container {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.3rem 1.25rem;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex-shrink: 0;
+}
+
+.doc-tabs-container::-webkit-scrollbar { display: none; }
+
+#doc-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+#doc-tabs::-webkit-scrollbar { display: none; }
+
+.doc-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.65rem;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition);
+}
+
+.doc-tab:hover {
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+}
+
+.doc-tab.active {
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+  border-color: var(--border-active);
+}
+
+.tab-title {
+  outline: none;
+  border-radius: 2px;
+}
+
+.tab-title[contenteditable="true"] {
+  background: var(--bg-elevated);
+  padding: 0 4px;
+  min-width: 40px;
+}
+
+.tab-close {
+  font-size: 1rem;
+  line-height: 1;
+  opacity: 0;
+  transition: opacity var(--transition);
+  color: var(--text-muted);
+}
+
+.doc-tab:hover .tab-close,
+.doc-tab.active .tab-close { opacity: 0.6; }
+.tab-close:hover { opacity: 1 !important; color: var(--pink); }
+
+.new-doc-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all var(--transition);
+  flex-shrink: 0;
+}
+
+.new-doc-btn:hover {
+  color: var(--cyan);
+  border-color: var(--cyan);
+  background: rgba(18, 194, 233, 0.08);
+}
+
+/* --- Toolbar --- */
+.toolbar-container {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.35rem 1.25rem;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.toolbar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 30px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-family: inherit;
+  transition: all var(--transition);
+}
+
+.toolbar-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+}
+
+.toolbar-btn.is-active {
+  color: var(--cyan);
+  background: rgba(18, 194, 233, 0.12);
+}
+
+.toolbar-btn code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+}
+
+.toolbar-btn mark {
+  background: rgba(255, 183, 77, 0.3);
+  color: #ffb74d;
+  border-radius: 2px;
+  padding: 0 2px;
+}
+
+.toolbar-separator {
+  width: 1px;
+  height: 18px;
+  background: var(--border);
+  margin: 0 0.25rem;
+}
+
+.toolbar-spacer { flex: 1; }
+
+/* --- Action Buttons (header) --- */
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.6rem;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-family: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+
+.action-btn:hover {
+  color: var(--text-primary);
+  border-color: var(--border-active);
+  background: var(--bg-tertiary);
+}
+
+.action-btn.is-active {
+  color: var(--cyan);
+  border-color: rgba(18, 194, 233, 0.3);
+  background: rgba(18, 194, 233, 0.08);
+}
+
+.action-btn.copied {
+  border-color: rgba(45, 212, 191, 0.3);
+  background: rgba(45, 212, 191, 0.08);
+}
+
+/* --- Editor Area --- */
+.editor-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#editor {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--bg-tertiary) transparent;
+}
+
+#editor::-webkit-scrollbar { width: 6px; }
+#editor::-webkit-scrollbar-track { background: transparent; }
+#editor::-webkit-scrollbar-thumb { background: var(--bg-tertiary); border-radius: 3px; }
+
+#editor.drag-over {
+  background: rgba(18, 194, 233, 0.04);
+  outline: 2px dashed rgba(18, 194, 233, 0.3);
+  outline-offset: -8px;
+}
+
+#editor.hidden { display: none; }
+
+#source {
+  flex: 1;
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  border: none;
+  padding: 1.5rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  line-height: 1.7;
+  resize: none;
+  outline: none;
+  scrollbar-width: thin;
+  scrollbar-color: var(--bg-tertiary) transparent;
+}
+
+#source::-webkit-scrollbar { width: 6px; }
+#source::-webkit-scrollbar-track { background: transparent; }
+#source::-webkit-scrollbar-thumb { background: var(--bg-tertiary); border-radius: 3px; }
+
+#source.hidden { display: none; }
+
+/* --- Editor Content Styles (Tiptap / ProseMirror) --- */
+.editor-content {
+  max-width: 52rem;
+  margin: 0 auto;
+  outline: none;
+  font-size: 0.95rem;
+  line-height: 1.8;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  padding: 2rem 2.5rem;
+  border-radius: var(--radius);
+  min-height: 100%;
+  border: 1px solid var(--border);
+}
+
+/* --- Channel style variant (toggle) --- */
+#editor.style-channel {
+  background:
+    linear-gradient(to right,
+      var(--bg-primary) calc(50% - 26rem),
+      var(--border) calc(50% - 26rem),
+      var(--border) calc(50% - 26rem + 1px),
+      var(--bg-secondary) calc(50% - 26rem + 1px),
+      var(--bg-secondary) calc(50% + 26rem - 1px),
+      var(--border) calc(50% + 26rem - 1px),
+      var(--border) calc(50% + 26rem),
+      var(--bg-primary) calc(50% + 26rem)
+    );
+}
+
+#editor.style-channel .editor-content {
+  background: none;
+  padding: 0 2.5rem;
+  border-radius: 0;
+  border: none;
+}
+
+.editor-content > *:first-child { margin-top: 0; }
+
+.editor-content h1,
+.editor-content h2,
+.editor-content h3,
+.editor-content h4 {
+  color: var(--text-primary);
+  font-weight: 600;
+  line-height: 1.3;
+  margin: 1.5em 0 0.5em;
+}
+
+.editor-content h1 { font-size: 1.8rem; color: var(--cyan); }
+.editor-content h2 { font-size: 1.4rem; }
+.editor-content h3 { font-size: 1.15rem; }
+.editor-content h4 { font-size: 1rem; color: var(--text-secondary); }
+
+.editor-content p { margin: 0.6em 0; }
+
+.editor-content strong { color: var(--text-primary); font-weight: 600; }
+.editor-content em { color: var(--text-primary); }
+
+.editor-content a,
+.editor-content .editor-link {
+  color: var(--cyan);
+  text-decoration: underline;
+  text-decoration-color: rgba(18, 194, 233, 0.3);
+  text-underline-offset: 3px;
+  transition: text-decoration-color var(--transition);
+}
+
+.editor-content a:hover,
+.editor-content .editor-link:hover {
+  text-decoration-color: var(--cyan);
+}
+
+.editor-content code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85em;
+  background: rgba(255, 107, 157, 0.1);
+  color: var(--pink);
+  padding: 0.15em 0.4em;
+  border-radius: 3px;
+}
+
+.editor-content pre {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  margin: 1em 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--bg-tertiary) transparent;
+}
+
+.editor-content pre code {
+  background: none;
+  color: var(--text-secondary);
+  padding: 0;
+  font-size: 0.82rem;
+  line-height: 1.6;
+}
+
+.editor-content blockquote {
+  border-left: 3px solid var(--purple);
+  padding: 0.25rem 0 0.25rem 1.25rem;
+  margin: 1em 0;
+  color: var(--text-muted);
+}
+
+.editor-content blockquote p { margin: 0.3em 0; }
+
+.editor-content ul,
+.editor-content ol {
+  padding-left: 1.5rem;
+  margin: 0.6em 0;
+}
+
+.editor-content li { margin: 0.2em 0; }
+.editor-content li::marker { color: var(--pink); }
+
+/* Task List: structure is ul > li > label(input+span) + div(p) */
+.editor-content ul[data-type="taskList"] {
+  list-style: none;
+  padding-left: 0;
+  margin: 0.6em 0;
+}
+
+.editor-content ul[data-type="taskList"] li {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 0.25em 0;
+}
+
+.editor-content ul[data-type="taskList"] li > label {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  margin-top: 0.35em;
+  user-select: none;
+}
+
+.editor-content ul[data-type="taskList"] li > label > span {
+  display: none;
+}
+
+.editor-content ul[data-type="taskList"] li > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.editor-content ul[data-type="taskList"] li > div > p {
+  margin: 0;
+}
+
+.editor-content ul[data-type="taskList"] li input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--purple);
+  border-radius: 4px;
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0;
+  transition: all var(--transition);
+  background: transparent;
+}
+
+.editor-content ul[data-type="taskList"] li input[type="checkbox"]:hover {
+  border-color: var(--cyan);
+  background: rgba(196, 113, 237, 0.1);
+}
+
+.editor-content ul[data-type="taskList"] li input[type="checkbox"]:checked {
+  background: var(--purple);
+  border-color: var(--purple);
+}
+
+.editor-content ul[data-type="taskList"] li input[type="checkbox"]:checked::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 6px;
+  height: 10px;
+  border: solid var(--bg-primary);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.editor-content ul[data-type="taskList"] li[data-checked="true"] > div > p {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+/* Nested task lists */
+.editor-content ul[data-type="taskList"] ul[data-type="taskList"] {
+  margin: 0.15em 0 0.15em 1.5rem;
+}
+
+/* --- Tables --- */
+.editor-content .editor-table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1em 0;
+  overflow: hidden;
+  border-radius: var(--radius);
+}
+
+.editor-content .editor-table td,
+.editor-content .editor-table th {
+  border: 1px solid var(--border);
+  padding: 0.5rem 0.75rem;
+  position: relative;
+  vertical-align: top;
+  min-width: 80px;
+}
+
+.editor-content .editor-table th {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.editor-content .editor-table td {
+  background: var(--bg-secondary);
+}
+
+.editor-content .editor-table tr:hover td {
+  background: var(--bg-tertiary);
+}
+
+.editor-content .editor-table td > p,
+.editor-content .editor-table th > p {
+  margin: 0;
+}
+
+.editor-content .editor-table .selectedCell {
+  background: rgba(18, 194, 233, 0.12);
+}
+
+.editor-content .editor-table .selectedCell::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--cyan);
+  pointer-events: none;
+}
+
+.editor-content hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 2em 0;
+}
+
+.editor-content img {
+  max-width: 100%;
+  border-radius: var(--radius);
+  margin: 0.5em 0;
+}
+
+.editor-content mark {
+  background: rgba(255, 183, 77, 0.25);
+  color: #ffcc80;
+  border-radius: 2px;
+  padding: 0 2px;
+}
+
+/* Placeholder */
+.editor-content p.is-editor-empty:first-child::before {
+  color: var(--text-muted);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+/* --- Syntax Highlighting (Tokyo Night inspired) --- */
+.editor-content pre code .hljs-keyword { color: var(--purple); }
+.editor-content pre code .hljs-string { color: var(--teal); }
+.editor-content pre code .hljs-number { color: var(--orange); }
+.editor-content pre code .hljs-function { color: var(--blue); }
+.editor-content pre code .hljs-title { color: var(--blue); }
+.editor-content pre code .hljs-params { color: var(--text-secondary); }
+.editor-content pre code .hljs-comment { color: var(--text-muted); font-style: italic; }
+.editor-content pre code .hljs-built_in { color: var(--cyan); }
+.editor-content pre code .hljs-type { color: var(--cyan); }
+.editor-content pre code .hljs-attr { color: var(--blue); }
+.editor-content pre code .hljs-variable { color: var(--pink); }
+.editor-content pre code .hljs-literal { color: var(--orange); }
+.editor-content pre code .hljs-meta { color: var(--text-muted); }
+.editor-content pre code .hljs-regexp { color: var(--teal); }
+.editor-content pre code .hljs-symbol { color: var(--pink); }
+.editor-content pre code .hljs-selector-class { color: var(--blue); }
+.editor-content pre code .hljs-selector-id { color: var(--cyan); }
+.editor-content pre code .hljs-selector-tag { color: var(--pink); }
+.editor-content pre code .hljs-tag { color: var(--pink); }
+.editor-content pre code .hljs-name { color: var(--pink); }
+.editor-content pre code .hljs-attribute { color: var(--orange); }
+
+/* --- Status Bar --- */
+.status-bar-container {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 0.3rem 1.25rem;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border);
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.status-sep {
+  margin: 0 0.5rem;
+  opacity: 0.4;
+}
+
+.status-saved { color: var(--teal); }
+
+/* --- Responsive --- */
+@media (max-width: 768px) {
+  .header { padding: 0.5rem 0.75rem; }
+  .toolbar-container { padding: 0.25rem 0.75rem; }
+  #editor { padding: 1rem; }
+  #source { padding: 1rem; }
+  .doc-tabs-container { padding: 0.25rem 0.75rem; }
+  .status-bar-container { padding: 0.25rem 0.75rem; }
+
+  .header-title span.title-text { display: none; }
+
+  .action-btn span { display: none; }
+}
+
+/* --- API Mode (KB Integration) --- */
+.save-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.75rem;
+  background: rgba(45, 212, 191, 0.12);
+  border: 1px solid rgba(45, 212, 191, 0.3);
+  border-radius: var(--radius-sm);
+  color: var(--teal);
+  font-size: 0.7rem;
+  font-family: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+
+.save-btn:hover {
+  background: rgba(45, 212, 191, 0.2);
+  border-color: var(--teal);
+}
+
+.save-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.save-status {
+  font-size: 0.7rem;
+  font-weight: 500;
+  padding: 0 0.5rem;
+}
+
+.save-status.saving { color: var(--orange); }
+.save-status.saved { color: var(--teal); }
+.save-status.error { color: var(--pink); }
+
+.category-badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  background: rgba(196, 113, 237, 0.15);
+  color: var(--purple);
+  border-radius: var(--radius-sm);
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-left: 0.5rem;
+  vertical-align: middle;
+}
+
+.api-error {
+  text-align: center;
+  padding: 2rem;
+  color: var(--pink);
+  font-size: 0.9rem;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
+}
+</style>
+</head>
+<body>
+
+<div class="app-container">
+  <div class="header">
+    <div class="header-title">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+      </svg>
+      <span class="title-text">Markdown Editor</span>
+    </div>
+    <div class="header-actions">
+      <button class="action-btn" id="copy-md" title="Copy Markdown">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="9" y="9" width="13" height="13" rx="2"/>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+        </svg>
+        <span>Copy MD</span>
+      </button>
+      <button class="action-btn" id="download-md" title="Download as .md">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        <span>Download</span>
+      </button>
+      <button class="action-btn" id="source-toggle" title="Toggle Source (Ctrl+Shift+M)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="16 18 22 12 16 6"/>
+          <polyline points="8 6 2 12 8 18"/>
+        </svg>
+        <span>Source</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="doc-tabs-container">
+    <div id="doc-tabs"></div>
+    <button class="new-doc-btn" id="new-doc" title="New Document">+</button>
+  </div>
+
+  <div class="toolbar-container" id="toolbar"></div>
+
+  <div class="editor-wrapper">
+    <div id="editor"></div>
+    <script>if((new URLSearchParams(location.search).get('style')||localStorage.getItem('editor-layout'))==='channel')document.getElementById('editor').classList.add('style-channel');</script>
+    <textarea id="source" class="hidden" spellcheck="true"></textarea>
+  </div>
+
+  <div class="status-bar-container" id="status-bar"></div>
+</div>
+
+<script src="editor.js"></script>
+<script>
+// --- Unified Tab Manager: dual-source (Documents + Knowledge Base) ---
+// Uses Tiptap API directly (window.__editor) for clean markdown get/set.
+// No source-toggle hack. Server-persisted session, auto-save, localStorage write-ahead.
+(function() {
+  const DOC_API = '/api/documents';
+  const KB_API = '/api/knowledge';
+  const SESSION_API = '/api/editor/session';
+  const AUTOSAVE_MS = 3000;
+  const LOCAL_KEY = 'editor-tab:';
+
+  // --- Tiptap editor instance (exposed by editor.js as window.__editor) ---
+  const tiptap = window.__editor;
+  if (!tiptap) { console.error('Tiptap editor not found'); return; }
+
+  // --- Detach editor.js built-in DOM targets ---
+  // editor.js caches #doc-tabs, #status-bar, #new-doc at init.
+  // Replacing them in the DOM leaves editor.js writing to detached (invisible) nodes,
+  // so its built-in tab system and status bar don't conflict with ours.
+  function detachAndReplace(id) {
+    const el = document.getElementById(id);
+    if (!el) return null;
+    const fresh = el.cloneNode(false);
+    el.replaceWith(fresh);
+    return fresh;
+  }
+
+  const tabsEl = detachAndReplace('doc-tabs');
+  const statusBar = detachAndReplace('status-bar');
+  const newDocBtn = detachAndReplace('new-doc');
+  if (!newDocBtn) return;
+  newDocBtn.className = 'new-doc-btn';
+  newDocBtn.title = 'New Document';
+  newDocBtn.textContent = '+';
+
+  const sourceEl = document.getElementById('source');
+  const editorEl = document.getElementById('editor');
+  const sourceToggle = document.getElementById('source-toggle');
+  const headerActions = document.querySelector('.header-actions');
+  if (!headerActions || !tabsEl) return;
+
+  // --- State ---
+  let tabs = [];
+  let activeIdx = -1;
+  let contentCache = {};
+  let fmCache = {};
+  let autoTimer = null;
+  let saving = false;
+  let loading = false;   // guard: suppress change events during content load
+  let panelOpen = false;
+
+  // --- Header buttons ---
+  const filesBtn = document.createElement('button');
+  filesBtn.className = 'action-btn';
+  filesBtn.title = 'Browse Files';
+  filesBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg><span>Files</span>`;
+  headerActions.insertBefore(filesBtn, headerActions.firstChild);
+
+  const saveBtn = document.createElement('button');
+  saveBtn.className = 'action-btn';
+  saveBtn.title = 'Save (Ctrl+S)';
+  saveBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg><span>Save</span>`;
+  headerActions.insertBefore(saveBtn, filesBtn.nextSibling);
+
+  // --- Layout toggle ---
+  const layoutBtn = document.createElement('button');
+  layoutBtn.className = 'action-btn';
+  layoutBtn.title = 'Toggle Layout';
+  const isChannel = editorEl.classList.contains('style-channel');
+  const cardIcon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>`;
+  const channelIcon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="2" x2="8" y2="22"/><line x1="16" y1="2" x2="16" y2="22"/></svg>`;
+  function updateLayoutBtn() {
+    const ch = editorEl.classList.contains('style-channel');
+    layoutBtn.innerHTML = (ch ? channelIcon : cardIcon) + '<span>' + (ch ? 'Channel' : 'Card') + '</span>';
+    if (ch) layoutBtn.classList.add('is-active'); else layoutBtn.classList.remove('is-active');
+  }
+  updateLayoutBtn();
+  layoutBtn.addEventListener('click', () => {
+    editorEl.classList.toggle('style-channel');
+    const nowChannel = editorEl.classList.contains('style-channel');
+    localStorage.setItem('editor-layout', nowChannel ? 'channel' : 'card');
+    updateLayoutBtn();
+  });
+  headerActions.insertBefore(layoutBtn, saveBtn.nextSibling);
+
+  // --- Markdown bridge (clean: uses Tiptap API directly, no toggle hack) ---
+  function getMarkdown() {
+    if (sourceEl && !sourceEl.classList.contains('hidden')) return sourceEl.value;
+    return tiptap.storage.markdown.getMarkdown();
+  }
+
+  function setMarkdown(md) {
+    loading = true;
+    if (sourceEl && !sourceEl.classList.contains('hidden')) sourceEl.value = md;
+    tiptap.commands.setContent(md);
+    loading = false;
+  }
+
+  // --- Tab key ---
+  function tKey(tab) {
+    return tab.type === 'knowledge' ? `kb:${tab.kbId}` : `doc:${tab.name}`;
+  }
+
+  // --- localStorage write-ahead ---
+  function cacheLocal(key, content) {
+    try { localStorage.setItem(LOCAL_KEY + key, JSON.stringify({ c: content, ts: Date.now() })); } catch(e) {}
+  }
+  function getLocal(key) {
+    try { const r = localStorage.getItem(LOCAL_KEY + key); return r ? JSON.parse(r) : null; } catch(e) { return null; }
+  }
+  function clearLocal(key) {
+    try { localStorage.removeItem(LOCAL_KEY + key); } catch(e) {}
+  }
+
+  // --- Frontmatter ---
+  function parseFM(raw) {
+    const m = raw.match(/^(---\n[\s\S]*?\n---\n)([\s\S]*)$/);
+    return m ? { fm: m[1], body: m[2] } : { fm: '', body: raw };
+  }
+
+  // --- Session persistence ---
+  async function loadSession() {
+    try {
+      const r = await fetch(SESSION_API);
+      if (r.ok) return await r.json();
+    } catch(e) {}
+    return { tabs: [], activeIdx: 0 };
+  }
+
+  async function saveSession() {
+    const data = {
+      tabs: tabs.map(t => {
+        const o = { type: t.type, title: t.title };
+        if (t.type === 'document') o.name = t.name;
+        if (t.type === 'knowledge') { o.kbId = t.kbId; o.category = t.category; }
+        return o;
+      }),
+      activeIdx
+    };
+    try { await fetch(SESSION_API, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) }); } catch(e) {}
+  }
+
+  // --- Tab rendering ---
+  function renderTabs() {
+    tabsEl.innerHTML = tabs.map((t, i) => {
+      const cls = i === activeIdx ? ' active' : '';
+      const dot = t.dirty ? '<span style="color:var(--orange);margin-left:3px;font-size:0.6rem">\u25CF</span>' : '';
+      const icon = t.type === 'knowledge' ? '<svg style="margin-right:4px;vertical-align:-2px;opacity:0.7" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2.5"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>' : '';
+      return `<button class="doc-tab${cls}" data-idx="${i}">${icon}<span class="tab-title">${t.title}</span>${dot}<span class="tab-close" data-close="${i}">&times;</span></button>`;
+    }).join('');
+
+    tabsEl.querySelectorAll('.doc-tab').forEach(btn => {
+      btn.addEventListener('click', e => {
+        const closeEl = e.target.closest('.tab-close');
+        if (closeEl) { closeTab(parseInt(closeEl.dataset.close)); return; }
+        switchTab(parseInt(btn.dataset.idx));
+      });
+    });
+    updateStatus();
+  }
+
+  // --- Status bar ---
+  function updateStatus(state) {
+    if (!statusBar) return;
+    const tab = tabs[activeIdx];
+    let html = '';
+    if (tab) {
+      const src = tab.type === 'knowledge' ? 'Knowledge Base' : 'Documents';
+      const path = tab.type === 'knowledge' ? `${tab.category}/${tab.kbId}` : tab.name;
+      html += `<span style="color:var(--text-muted)">${src}</span><span class="status-sep">&middot;</span>`;
+      html += `<span style="color:var(--teal);font-family:'JetBrains Mono',monospace;font-size:0.65rem">${path}</span>`;
+    }
+    html += '<span style="flex:1"></span>';
+    if (state === 'saving') html += '<span style="color:var(--orange)">Saving...</span>';
+    else if (state === 'saved') html += '<span style="color:var(--teal)">Saved</span>';
+    else if (state === 'offline') html += '<span style="color:var(--orange)">Offline \u2014 cached locally</span>';
+    else if (state === 'error') html += '<span style="color:var(--pink)">Save failed</span>';
+    else if (tab && tab.dirty) html += '<span style="color:var(--orange)">Unsaved changes</span>';
+    else if (tab) html += '<span style="color:var(--text-muted)">Saved</span>';
+    statusBar.innerHTML = html;
+  }
+
+  // --- Tab operations ---
+  function saveCurrentToCache() {
+    if (activeIdx >= 0 && activeIdx < tabs.length) {
+      contentCache[tKey(tabs[activeIdx])] = getMarkdown();
+    }
+  }
+
+  function switchTab(idx) {
+    if (idx < 0 || idx >= tabs.length || idx === activeIdx) return;
+    saveCurrentToCache();
+    activeIdx = idx;
+    const key = tKey(tabs[idx]);
+    setMarkdown(contentCache[key] || '');
+    renderTabs();
+    saveSession();
+  }
+
+  function closeTab(idx) {
+    if (idx < 0 || idx >= tabs.length) return;
+    const tab = tabs[idx];
+    if (tab.dirty && !confirm(`"${tab.title}" has unsaved changes. Close anyway?`)) return;
+
+    const key = tKey(tab);
+    delete contentCache[key];
+    delete fmCache[key];
+    clearLocal(key);
+    tabs.splice(idx, 1);
+
+    if (tabs.length === 0) {
+      activeIdx = -1;
+      setMarkdown('');
+    } else if (idx <= activeIdx) {
+      activeIdx = Math.max(0, Math.min(activeIdx - (idx < activeIdx ? 1 : 0), tabs.length - 1));
+      setMarkdown(contentCache[tKey(tabs[activeIdx])] || '');
+    }
+    renderTabs();
+    saveSession();
+  }
+
+  async function openDocument(name, skipSwitch) {
+    const existIdx = tabs.findIndex(t => t.type === 'document' && t.name === name);
+    if (existIdx >= 0) { if (!skipSwitch) switchTab(existIdx); return; }
+
+    try {
+      const r = await fetch(`${DOC_API}/${encodeURIComponent(name)}`);
+      if (!r.ok) throw new Error('Not found');
+      const data = await r.json();
+
+      const tab = { type: 'document', name: data.name, title: data.name.replace(/\.md$/,'').replace(/-/g,' '), dirty: false, lastSaved: Date.now() };
+      const key = tKey(tab);
+
+      const local = getLocal(key);
+      if (local && local.ts > new Date(data.modified).getTime()) {
+        contentCache[key] = local.c;
+        tab.dirty = true;
+      } else {
+        contentCache[key] = data.content;
+        clearLocal(key);
+      }
+
+      saveCurrentToCache();
+      tabs.push(tab);
+      if (!skipSwitch) {
+        activeIdx = tabs.length - 1;
+        setMarkdown(contentCache[key]);
+      }
+      renderTabs();
+      saveSession();
+    } catch(e) {
+      console.error('Failed to open document:', name, e);
+    }
+  }
+
+  async function openKnowledge(kbId, skipSwitch) {
+    const existIdx = tabs.findIndex(t => t.type === 'knowledge' && t.kbId === kbId);
+    if (existIdx >= 0) { if (!skipSwitch) switchTab(existIdx); return; }
+
+    try {
+      const r = await fetch(`${KB_API}/${encodeURIComponent(kbId)}`);
+      if (!r.ok) throw new Error('Not found');
+      const data = await r.json();
+      const { fm, body } = parseFM(data.content);
+
+      const tab = { type: 'knowledge', kbId: kbId, title: data.title || kbId, category: data.category, dirty: false, lastSaved: Date.now() };
+      const key = tKey(tab);
+      fmCache[key] = fm;
+
+      const local = getLocal(key);
+      if (local && local.ts > tab.lastSaved) {
+        contentCache[key] = local.c;
+        tab.dirty = true;
+      } else {
+        contentCache[key] = body;
+        clearLocal(key);
+      }
+
+      saveCurrentToCache();
+      tabs.push(tab);
+      if (!skipSwitch) {
+        activeIdx = tabs.length - 1;
+        setMarkdown(contentCache[key]);
+      }
+      renderTabs();
+      saveSession();
+    } catch(e) {
+      console.error('Failed to open KB article:', kbId, e);
+    }
+  }
+
+  async function newDocument() {
+    const name = prompt('Document name (without .md):');
+    if (!name) return;
+    let slug = name.trim().replace(/[^a-zA-Z0-9 _-]/g, '').replace(/\s+/g, '-');
+    if (!slug) return;
+    if (!slug.endsWith('.md')) slug += '.md';
+
+    const content = '# ' + name.trim() + '\n\n';
+    saveCurrentToCache();
+
+    try {
+      await fetch(`${DOC_API}/${encodeURIComponent(slug)}`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ content }) });
+    } catch(e) {}
+
+    const tab = { type: 'document', name: slug, title: name.trim(), dirty: false, lastSaved: Date.now() };
+    contentCache[tKey(tab)] = content;
+    tabs.push(tab);
+    activeIdx = tabs.length - 1;
+    setMarkdown(content);
+    renderTabs();
+    saveSession();
+    tiptap.commands.focus('end');
+  }
+
+  // --- Auto-save ---
+  function onContentChange() {
+    if (activeIdx < 0 || loading) return;
+    const tab = tabs[activeIdx];
+    if (!tab) return;
+
+    // localStorage write-ahead (safe: getMarkdown uses Tiptap API, no toggle)
+    cacheLocal(tKey(tab), getMarkdown());
+
+    if (!tab.dirty) {
+      tab.dirty = true;
+      renderTabs();
+    }
+
+    if (autoTimer) clearTimeout(autoTimer);
+    autoTimer = setTimeout(() => saveActiveTab(), AUTOSAVE_MS);
+  }
+
+  async function saveActiveTab(force) {
+    if (activeIdx < 0 || saving) return;
+    const tab = tabs[activeIdx];
+    if (!tab || (!tab.dirty && !force)) return;
+
+    saving = true;
+    const content = getMarkdown();
+    const key = tKey(tab);
+    contentCache[key] = content;
+    updateStatus('saving');
+
+    try {
+      if (tab.type === 'document') {
+        const r = await fetch(`${DOC_API}/${encodeURIComponent(tab.name)}`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ content }) });
+        if (!r.ok) throw new Error('Save failed');
+      } else if (tab.type === 'knowledge') {
+        const full = (fmCache[key] || '') + content;
+        const r = await fetch(`${KB_API}/${encodeURIComponent(tab.kbId)}`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ content: full }) });
+        if (!r.ok) throw new Error('Save failed');
+      }
+
+      tab.dirty = false;
+      tab.lastSaved = Date.now();
+      clearLocal(key);
+      updateStatus('saved');
+      renderTabs();
+      setTimeout(() => { if (tabs[activeIdx] && !tabs[activeIdx].dirty) updateStatus(); }, 3000);
+    } catch(e) {
+      updateStatus('offline');
+    }
+    saving = false;
+  }
+
+  // --- File manager panel ---
+  const panel = document.createElement('div');
+  panel.id = 'file-manager-panel';
+  panel.innerHTML = `
+    <div class="fm-header"><span class="fm-title">Documents</span><button class="fm-close" id="fm-close">&times;</button></div>
+    <div class="fm-actions"><button class="fm-btn" id="fm-new">+ New Document</button></div>
+    <div class="fm-list" id="fm-list"></div>
+    <div class="fm-footer">~/data/documents/</div>`;
+  document.body.appendChild(panel);
+
+  const panelStyle = document.createElement('style');
+  panelStyle.textContent = `
+    #file-manager-panel { position:fixed; top:0; right:-340px; width:340px; height:100vh; background:var(--bg-secondary); border-left:1px solid var(--border); z-index:1000; display:flex; flex-direction:column; transition:right 200ms ease; box-shadow:-4px 0 20px rgba(0,0,0,0.3); }
+    #file-manager-panel.open { right:0; }
+    .fm-header { display:flex; align-items:center; justify-content:space-between; padding:1rem 1.25rem; border-bottom:1px solid var(--border); }
+    .fm-title { font-size:0.9rem; font-weight:600; color:var(--cyan); }
+    .fm-close { background:none; border:none; color:var(--text-muted); font-size:1.4rem; cursor:pointer; padding:0 0.25rem; line-height:1; }
+    .fm-close:hover { color:var(--pink); }
+    .fm-actions { padding:0.75rem 1.25rem; border-bottom:1px solid var(--border); }
+    .fm-btn { display:inline-flex; align-items:center; gap:0.3rem; padding:0.4rem 0.75rem; background:rgba(18,194,233,0.1); border:1px solid rgba(18,194,233,0.25); border-radius:4px; color:var(--cyan); font-size:0.75rem; font-family:inherit; font-weight:500; cursor:pointer; transition:all 150ms ease; }
+    .fm-btn:hover { background:rgba(18,194,233,0.2); border-color:var(--cyan); }
+    .fm-list { flex:1; overflow-y:auto; padding:0.5rem 0; scrollbar-width:thin; scrollbar-color:var(--bg-tertiary) transparent; }
+    .fm-file { display:flex; align-items:center; gap:0.5rem; padding:0.6rem 1.25rem; cursor:pointer; transition:background 150ms ease; border-left:3px solid transparent; }
+    .fm-file:hover { background:var(--bg-tertiary); }
+    .fm-file.active { background:var(--bg-tertiary); border-left-color:var(--cyan); }
+    .fm-file-info { flex:1; min-width:0; }
+    .fm-file-name { font-size:0.8rem; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .fm-file-meta { font-size:0.65rem; color:var(--text-muted); margin-top:0.1rem; }
+    .fm-file-del { background:none; border:none; color:var(--text-muted); font-size:0.75rem; cursor:pointer; padding:0.15rem 0.3rem; border-radius:3px; opacity:0; transition:opacity 150ms; }
+    .fm-file:hover .fm-file-del { opacity:1; }
+    .fm-file-del:hover { color:var(--pink); background:rgba(255,107,157,0.1); }
+    .fm-empty { text-align:center; padding:2rem 1rem; color:var(--text-muted); font-size:0.8rem; }
+    .fm-footer { padding:0.5rem 1.25rem; border-top:1px solid var(--border); font-size:0.65rem; color:var(--text-muted); font-family:'JetBrains Mono',monospace; }
+  `;
+  document.head.appendChild(panelStyle);
+
+  async function loadFileList() {
+    const listEl = document.getElementById('fm-list');
+    try {
+      const r = await fetch(DOC_API);
+      const docs = await r.json();
+      const activeDoc = tabs[activeIdx];
+      if (!docs.length) { listEl.innerHTML = '<div class="fm-empty">No documents yet.</div>'; return; }
+      listEl.innerHTML = docs.map(d => {
+        const dt = new Date(d.modified).toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+        const isOpen = activeDoc && activeDoc.type === 'document' && activeDoc.name === d.name;
+        return `<div class="fm-file${isOpen?' active':''}" data-name="${d.name}"><div class="fm-file-info"><div class="fm-file-name">${d.name.replace(/\.md$/,'')}</div><div class="fm-file-meta">${dt} &middot; ${(d.size/1024).toFixed(1)}KB</div></div><button class="fm-file-del" data-del="${d.name}" title="Delete">&times;</button></div>`;
+      }).join('');
+
+      listEl.querySelectorAll('.fm-file').forEach(el => {
+        el.addEventListener('click', e => {
+          if (e.target.closest('.fm-file-del')) return;
+          openDocument(el.dataset.name);
+        });
+      });
+      listEl.querySelectorAll('.fm-file-del').forEach(btn => {
+        btn.addEventListener('click', async e => {
+          e.stopPropagation();
+          const name = btn.dataset.del;
+          if (!confirm('Delete "' + name + '"?')) return;
+          await fetch(`${DOC_API}/${encodeURIComponent(name)}`, { method: 'DELETE' });
+          const idx = tabs.findIndex(t => t.type === 'document' && t.name === name);
+          if (idx >= 0) closeTab(idx);
+          loadFileList();
+        });
+      });
+    } catch(e) { listEl.innerHTML = '<div class="fm-empty">Failed to load.</div>'; }
+  }
+
+  function togglePanel() {
+    panelOpen = !panelOpen;
+    panel.classList.toggle('open', panelOpen);
+    filesBtn.classList.toggle('is-active', panelOpen);
+    if (panelOpen) loadFileList();
+  }
+
+  // --- Drag & Drop ---
+  [editorEl, sourceEl].filter(Boolean).forEach(target => {
+    target.addEventListener('dragover', e => {
+      if (!e.dataTransfer.types.includes('Files')) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+      editorEl.classList.add('drag-over');
+    });
+    target.addEventListener('dragleave', e => {
+      if (target.contains(e.relatedTarget)) return;
+      editorEl.classList.remove('drag-over');
+    });
+    target.addEventListener('drop', e => {
+      editorEl.classList.remove('drag-over');
+      if (!e.dataTransfer.files.length) return;
+      e.preventDefault();
+      const file = e.dataTransfer.files[0];
+      if (!file.name.match(/\.(md|txt|markdown)$/i)) { alert('Drop a .md or .txt file.'); return; }
+
+      const reader = new FileReader();
+      reader.onload = async () => {
+        let name = file.name.replace(/\.(txt|markdown)$/i, '.md');
+        if (!name.endsWith('.md')) name += '.md';
+        const slug = name.replace(/[^a-zA-Z0-9._-]/g, '-').replace(/-+/g, '-');
+
+        try {
+          const chk = await fetch(`${DOC_API}/${encodeURIComponent(slug)}`);
+          if (chk.ok && !confirm(`"${slug}" exists. Overwrite?`)) return;
+        } catch(e) {}
+
+        try {
+          await fetch(`${DOC_API}/${encodeURIComponent(slug)}`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ content: reader.result }) });
+          await openDocument(slug);
+        } catch(e) { alert('Import failed: ' + e.message); }
+      };
+      reader.readAsText(file);
+    });
+  });
+
+  // --- Event listeners ---
+  filesBtn.addEventListener('click', togglePanel);
+  document.getElementById('fm-close').addEventListener('click', togglePanel);
+  document.getElementById('fm-new').addEventListener('click', newDocument);
+  saveBtn.addEventListener('click', () => saveActiveTab(true));
+  newDocBtn.addEventListener('click', newDocument);
+
+  // Ctrl+S = save (capture phase to run before editor.js handler)
+  document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveActiveTab(true); }
+  }, true);
+
+  // Content change: use Tiptap's update event (not DOM input)
+  // This fires when document content changes in WYSIWYG mode.
+  // The loading guard prevents firing during tab switches / content loads.
+  tiptap.on('update', () => {
+    if (!loading) onContentChange();
+  });
+  // Source textarea changes (when in source mode)
+  sourceEl.addEventListener('input', () => {
+    if (!loading) onContentChange();
+  });
+  // Refresh status after source toggle
+  sourceToggle.addEventListener('click', () => setTimeout(updateStatus, 100));
+
+  // Online recovery
+  window.addEventListener('online', () => {
+    tabs.forEach((t, i) => {
+      if (t.dirty) {
+        const key = tKey(t);
+        const local = getLocal(key);
+        if (local) {
+          contentCache[key] = local.c;
+          if (i === activeIdx) saveActiveTab(true);
+        }
+      }
+    });
+  });
+
+  // --- Init ---
+  async function init() {
+    const session = await loadSession();
+
+    for (const t of (session.tabs || [])) {
+      try {
+        if (t.type === 'document') await openDocument(t.name, true);
+        else if (t.type === 'knowledge') await openKnowledge(t.kbId, true);
+      } catch(e) {}
+    }
+
+    const restoreIdx = session.activeIdx >= 0 && session.activeIdx < tabs.length ? session.activeIdx : tabs.length - 1;
+    if (restoreIdx >= 0 && tabs.length > 0) {
+      activeIdx = restoreIdx;
+      setMarkdown(contentCache[tKey(tabs[activeIdx])] || '');
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const docP = params.get('doc');
+    const kbP = params.get('kb');
+    if (docP) await openDocument(docP.endsWith('.md') ? docP : docP + '.md');
+    if (kbP) await openKnowledge(kbP);
+
+    if (docP || kbP) {
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+
+    renderTabs();
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>

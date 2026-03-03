@@ -1,0 +1,13 @@
+services:
+  knowledge-ui:
+    build: .
+    container_name: knowledge-ui
+    restart: unless-stopped
+    ports:
+      - "9450:8080"
+    volumes:
+      - ${HOME}/data:/data
+      - ./public:/public:ro
+    environment:
+      - DATA_DIR=/data
+      - PUBLIC_DIR=/public

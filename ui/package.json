@@ -1,0 +1,18 @@
+{
+  "name": "skill-knowledge-editor",
+  "private": true,
+  "scripts": {
+    "build": "bun build src/editor.ts --outfile=public/editor/editor.js --target=browser --minify"
+  },
+  "dependencies": {
+    "@tiptap/core": "^2.11.0",
+    "@tiptap/starter-kit": "^2.11.0",
+    "@tiptap/extension-link": "^2.11.0",
+    "@tiptap/extension-placeholder": "^2.11.0",
+    "@tiptap/extension-task-list": "^2.11.0",
+    "@tiptap/extension-task-item": "^2.11.0",
+    "@tiptap/extension-underline": "^2.11.0",
+    "@tiptap/pm": "^2.11.0",
+    "tiptap-markdown": "^0.8.10"
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "updated": "2026-03-01",
+  "categories": ["tech", "home", "work"],
+  "entries": [
+    {
+      "id": "nginx-reverse-proxy",
+      "title": "Nginx Reverse Proxy Configuration",
+      "tags": ["nginx", "proxy", "docker", "networking"],
+      "category": "tech",
+      "created": "2026-02-10",
+      "path": "entries/tech/nginx-reverse-proxy.md"
+    },
+    {
+      "id": "docker-compose-networking",
+      "title": "Docker Compose Networking",
+      "tags": ["docker", "networking", "containers"],
+      "category": "tech",
+      "created": "2026-02-12",
+      "path": "entries/tech/docker-compose-networking.md"
+    },
+    {
+      "id": "certbot-renewal",
+      "title": "Certbot Certificate Renewal",
+      "tags": ["ssl", "certbot", "letsencrypt", "certs"],
+      "category": "tech",
+      "created": "2026-02-15",
+      "path": "entries/tech/certbot-renewal.md"
+    },
+    {
+      "id": "circuit-breaker-location",
+      "title": "Circuit Breaker Panel Map",
+      "tags": ["electrical", "home", "breakers"],
+      "category": "home",
+      "created": "2026-01-20",
+      "path": "entries/home/circuit-breaker-location.md"
+    },
+    {
+      "id": "vendor-contact-list",
+      "title": "Vendor Contact List",
+      "tags": ["vendors", "contacts", "work"],
+      "category": "work",
+      "created": "2026-02-01",
+      "path": "entries/work/vendor-contact-list.md"
+    }
+  ]
+}
