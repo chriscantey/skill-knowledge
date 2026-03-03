@@ -892,7 +892,9 @@ body {
     loading = true;
     if (sourceEl && !sourceEl.classList.contains('hidden')) sourceEl.value = md;
     tiptap.commands.setContent(md);
-    loading = false;
+    // Defer clearing loading flag to next microtask so any async TipTap
+    // update events fired by setContent are still suppressed by the guard
+    Promise.resolve().then(() => { loading = false; });
   }
 
   // --- Tab key ---
@@ -988,6 +990,8 @@ body {
 
   function switchTab(idx) {
     if (idx < 0 || idx >= tabs.length || idx === activeIdx) return;
+    // Kill any pending auto-save so it can't fire against the new tab
+    if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
     saveCurrentToCache();
     activeIdx = idx;
     const key = tKey(tabs[idx]);
@@ -1001,6 +1005,7 @@ body {
     const tab = tabs[idx];
     if (tab.dirty && !confirm(`"${tab.title}" has unsaved changes. Close anyway?`)) return;
 
+    if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
     const key = tKey(tab);
     delete contentCache[key];
     delete fmCache[key];
@@ -1039,6 +1044,7 @@ body {
         clearLocal(key);
       }
 
+      if (!skipSwitch && autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
       saveCurrentToCache();
       tabs.push(tab);
       if (!skipSwitch) {
@@ -1075,6 +1081,7 @@ body {
         clearLocal(key);
       }
 
+      if (!skipSwitch && autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
       saveCurrentToCache();
       tabs.push(tab);
       if (!skipSwitch) {
@@ -1096,6 +1103,7 @@ body {
     if (!slug.endsWith('.md')) slug += '.md';
 
     const content = '# ' + name.trim() + '\n\n';
+    if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
     saveCurrentToCache();
 
     try {
@@ -1118,6 +1126,10 @@ body {
     const tab = tabs[activeIdx];
     if (!tab) return;
 
+    // Capture the tab index at change time so the timer can verify
+    // it's still the active tab when it fires
+    const changeIdx = activeIdx;
+
     // localStorage write-ahead (safe: getMarkdown uses Tiptap API, no toggle)
     cacheLocal(tKey(tab), getMarkdown());
 
@@ -1127,7 +1139,10 @@ body {
     }
 
     if (autoTimer) clearTimeout(autoTimer);
-    autoTimer = setTimeout(() => saveActiveTab(), AUTOSAVE_MS);
+    autoTimer = setTimeout(() => {
+      // Only auto-save if the same tab is still active
+      if (activeIdx === changeIdx) saveActiveTab();
+    }, AUTOSAVE_MS);
   }
 
   async function saveActiveTab(force) {
